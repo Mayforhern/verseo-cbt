@@ -124,6 +124,8 @@ export default function AIChatHelper() {
     try {
       console.log("Sending message to Flask backend...");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://verseo-backend.onrender.com';
+      console.log("Using API URL:", apiUrl);
+      
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: {
@@ -135,13 +137,16 @@ export default function AIChatHelper() {
         }),
       });
 
+      console.log("Response status:", response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Error response:", errorData);
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Response from Flask backend:", data);
+      console.log("Response data:", data);
 
       if (!data.response) {
         throw new Error('Invalid response format from server');

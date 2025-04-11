@@ -16,10 +16,13 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Configure CORS
-if os.environ.get('FLASK_ENV') == 'production':
-    CORS(app, resources={r"/api/*": {"origins": ["https://your-frontend-domain.com"]}})
-else:
-    CORS(app)  # Allow all origins in development
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["*"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept"]
+    }
+})
 
 # Initialize Groq client
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -40,7 +43,7 @@ def home():
     return jsonify({
         "status": "API is running",
         "api_key_status": api_status,
-        "environment": {k: v for k, v in os.environ.items() if k.startswith('GROQ_')}
+        "environment": os.environ.get('FLASK_ENV', 'development')
     })
 
 @app.route('/api/chat', methods=['POST', 'OPTIONS'])
@@ -121,7 +124,7 @@ def chat():
         }), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.environ.get('PORT', 5000))
     print("Starting Flask server...")
     print(f"GROQ_API_KEY: {GROQ_API_KEY[:10]}..." if GROQ_API_KEY else "Not set")
-    app.run(host='0.0.0.0', port=port, debug=True) 
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get('FLASK_ENV') != 'production') 
