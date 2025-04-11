@@ -4,6 +4,12 @@ import os
 from dotenv import load_dotenv
 import requests
 import json
+from groq import Groq
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
@@ -98,5 +104,5 @@ def chat():
 
 if __name__ == '__main__':
     print("Starting Flask server...")
-    print("GROQ_API_KEY:", GROQ_API_KEY[:10] + "..." if GROQ_API_KEY else "Not set")
-    app.run(debug=True) 
+    print(f"GROQ_API_KEY: {os.getenv('GROQ_API_KEY')[:10]}...")
+    app.run(host='0.0.0.0', port=5000, debug=True) 
