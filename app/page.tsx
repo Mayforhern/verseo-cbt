@@ -123,7 +123,8 @@ export default function AIChatHelper() {
 
     try {
       console.log("Sending message to Flask backend...");
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://verseo-backend.onrender.com';
+      const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

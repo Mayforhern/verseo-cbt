@@ -14,8 +14,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Enable CORS for all origins
-CORS(app, supports_credentials=True)
+
+# Configure CORS
+if os.environ.get('FLASK_ENV') == 'production':
+    CORS(app, resources={r"/api/*": {"origins": ["https://your-frontend-domain.com"]}})
+else:
+    CORS(app)  # Allow all origins in development
 
 # Initialize Groq client
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
