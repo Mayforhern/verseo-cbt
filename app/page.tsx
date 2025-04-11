@@ -127,17 +127,23 @@ export default function AIChatHelper() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           message: inputMessage
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       console.log("Response from Flask backend:", data);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
+      if (!data.response) {
+        throw new Error('Invalid response format from server');
       }
       
       const assistantMessage: Message = {

@@ -4,13 +4,18 @@ import os
 from groq import Groq
 import logging
 import json
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Enable CORS for all origins
+CORS(app, supports_credentials=True)
 
 # Initialize Groq client
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -19,7 +24,11 @@ if not GROQ_API_KEY:
 else:
     logger.info(f"GROQ_API_KEY is set (starts with: {GROQ_API_KEY[:10]}...)")
 
-client = Groq(api_key=GROQ_API_KEY)
+try:
+    client = Groq(api_key=GROQ_API_KEY)
+except Exception as e:
+    logger.error(f"Failed to initialize Groq client: {str(e)}")
+    client = None
 
 @app.route('/')
 def home():
@@ -33,12 +42,17 @@ def home():
 @app.route('/api/chat', methods=['POST', 'OPTIONS'])
 def chat():
     if request.method == 'OPTIONS':
-        return '', 200
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', '*')
+        return response
         
     try:
-        # Log headers for debugging
-        logger.info(f"Request headers: {dict(request.headers)}")
-        
+        # Check if client is initialized
+        if client is None:
+            return jsonify({'error': 'Groq client is not initialized'}), 500
+
         # Validate request content type
         if not request.is_json:
             logger.error("Invalid content type. Expected application/json")
@@ -47,12 +61,8 @@ def chat():
                 'received_content_type': request.content_type
             }), 400
 
-        # Log raw request data
-        raw_data = request.get_data().decode('utf-8')
-        logger.info(f"Raw request data: {raw_data}")
-
         data = request.get_json(force=False, silent=False)
-        logger.info(f"Parsed request data: {data}")
+        logger.info(f"Received request: {data}")
 
         # Validate message
         message = data.get('message')
@@ -89,19 +99,9 @@ def chat():
             return jsonify({'error': f'Groq API error: {str(groq_error)}'}), 500
         
         response = chat_completion.choices[0].message.content
+        logger.info(f"Sending response: {response[:100]}...")
         
-        # Log the response for debugging
-        logger.info(f"Response content: {response}")
-        
-        # Ensure response is properly formatted JSON
-        json_response = json.dumps({'response': response})
-        logger.info(f"Formatted JSON response: {json_response}")
-        
-        return Response(
-            json_response,
-            status=200,
-            mimetype='application/json'
-        )
+        return jsonify({'response': response})
 
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error: {str(e)}")
@@ -120,4 +120,4 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     print("Starting Flask server...")
     print(f"GROQ_API_KEY: {GROQ_API_KEY[:10]}..." if GROQ_API_KEY else "Not set")
-    app.run(host='0.0.0.0', port=port) 
+    app.run(host='0.0.0.0', port=port, debug=True) 
