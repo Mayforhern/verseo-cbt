@@ -9,4 +9,17 @@ services:
         value: production
       - key: GROQ_API_KEY
         sync: false
-    healthCheckPath: / 
+    healthCheckPath: /
+
+  - type: web
+    name: verseo-frontend
+    env: node
+    buildCommand: |
+      npm install
+      npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://verseo-backend.onrender.com
+    healthCheckPath: /
+    plan: free 
